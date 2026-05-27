@@ -1,0 +1,59 @@
+import os
+import pandas as pd
+import qrcode
+
+EXCEL_FILE = "C:\\Users\\DCAMPOVE\\Desktop\\Generador QR\\Links para generar QR.xlsx"
+
+CARPETA_DESTINO = "C:\\Users\\DCAMPOVE\\Desktop\\Generador QR\\Codigos_QR"
+
+COLUMNA_LINKS = "Link"
+COLUMNA_NOMBRES = "ID"
+# =====================================================================
+
+def generar_codigos_qr():
+
+    if not os.path.exists(CARPETA_DESTINO):
+        os.makedirs(CARPETA_DESTINO)
+        print(f"📁 Se ha creado la carpeta para tus QR en: {CARPETA_DESTINO}")
+        
+    try:
+        df = pd.read_excel(EXCEL_FILE)
+        print(f"📦 Procesando {len(df)} registros desde '{EXCEL_FILE}'...\n")
+        
+        for indice, fila in df.iterrows():
+            link = str(fila[COLUMNA_LINKS]).strip()
+            nombre_qr = str(fila[COLUMNA_NOMBRES]).strip()
+            
+            if pd.isna(fila[COLUMNA_LINKS]) or link == "" or link.lower() == "nan":
+                print(f"⚠️ Fila {indice + 2}: Saltada porque no tiene un enlace válido.")
+                continue
+                
+            if pd.isna(fila[COLUMNA_NOMBRES]) or nombre_qr == "" or nombre_qr.lower() == "nan":
+                nombre_qr = f"QR_Fila_{indice + 2}"
+            
+            nombre_valido = "".join(c for c in nombre_qr if c.isalnum() or c in (' ', '_', '-')).rstrip()
+            ruta_archivo = os.path.join(CARPETA_DESTINO, f"{nombre_valido}.png")
+            
+            qr = qrcode.QRCode(
+                version=1,
+                error_correction=qrcode.constants.ERROR_CORRECT_H, 
+                box_size=12,
+                border=4, 
+            )
+            qr.add_data(link)
+            qr.make(fit=True)
+            
+            img = qr.make_image(fill_color="black", back_color="white")
+            img.save(ruta_archivo)
+            print(f"✅ QR generado con éxito -> {nombre_valido}.png")
+            
+        print(f"\n🎉 ¡Proceso completado con éxito! Todos los QR personalizados están en: '{CARPETA_DESTINO}'")
+        
+    except FileNotFoundError:
+        print(f"❌ Error: No se encontró el archivo de Excel en la ruta: '{EXCEL_FILE}'")
+        print("Verifica que el nombre del archivo sea exactamente 'Links para generar QR.xlsx'")
+    except Exception as e:
+        print(f"❌ Ocurrió un error inesperado durante el procesamiento: {e}")
+
+if __name__ == "__main__":
+    generar_codigos_qr()
