@@ -1,0 +1,7 @@
+Librerias
+=========
+Flask
+pandas
+openpyxl
+qrcode
+pillow

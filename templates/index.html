@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador QR Pro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%230d6efd'><path d='M3 3h8v8H3zm2 2v4h4V5zm8-2h8v8h-8zm2 2v4h4V5zM3 13h8v8H3zm2 2v4h4v-4zm13 1h3v3h-3zm-3-3h3v3h-3zm3 0h3v3h-3z'/></svg>">
+</head>
+<body>
+
+<div class="container py-5">
+    <div class="text-center mb-5 header-section">
+        <h1 class="fw-bold text-dark"><i class="bi bi-qr-code-scan text-primary"></i> Generador de Códigos QR</h1>
+        <p class="text-muted fs-5">Crea tus QRs individuales o masivos al instante en formatos listos para usar</p>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm mb-4" role="alert">
+                    <i class="bi {% if category == 'danger' %}bi-exclamation-triangle-fill{% else %}bi-check-circle-fill{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                  </div>
+                {% endfor %}
+            </div>
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card p-4 shadow-lg border-0">
+                
+                <ul class="nav nav-pills nav-fill mb-4" id="pills-tab" role="tablist">
+                    <li class="nav-item">
+                        <button class="nav-link active py-3" id="pills-single-tab" data-bs-toggle="pill" data-bs-target="#pills-single" type="button" role="tab">
+                            <i class="bi bi-qr-code fs-5 d-block mb-1"></i> Individual
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link py-3" id="pills-bulk-tab" data-bs-toggle="pill" data-bs-target="#pills-bulk" type="button" role="tab">
+                            <i class="bi bi-file-earmark-excel fs-5 d-block mb-1"></i> Masivo (Excel)
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="pills-tabContent">
+                    
+                    <div class="tab-pane fade show active" id="pills-single" role="tabpanel">
+                        <form method="POST" id="form-individual">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-secondary">Nombre del archivo QR</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-file-earmark-text"></i></span>
+                                    <input type="text" name="nombre" class="form-control" placeholder="Ej: Diagrama de Circuito">
+                                </div>
+                                <div class="form-text text-muted">Opcional. Si se deja en blanco se guardará como "codigo_qr".</div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-secondary">Enlace o URL de destino</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-link-45deg"></i></span>
+                                    <input type="url" name="link" class="form-control" placeholder="https://ejemplo.com/archivo" required>
+                                </div>
+                            </div>
+                            <button type="submit" name="btn_individual" class="btn btn-primary w-100 py-3 shadow-sm btn-submit" onclick="if(this.form.checkValidity()) { setTimeout(() => { this.form.reset(); }, 300); }">
+                                <i class="bi bi-download me-2"></i> Generar y Descargar PNG
+                            </button>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="pills-bulk" role="tabpanel">
+                        <div class="alert alert-info border-0 bg-light-info text-dark py-3 mb-4 rounded-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                <h6 class="fw-bold mb-0"><i class="bi bi-info-circle-fill text-info me-2"></i>Estructura del archivo:</h6>
+                                <a href="{{ url_for('descargar_plantilla') }}" class="btn btn-sm btn-light border fw-semibold text-primary shadow-sm">
+                                    <i class="bi bi-file-earmark-arrow-down-fill me-1"></i> Descargar Plantilla
+                                </a>
+                            </div>
+                            <p class="mb-0 small text-muted">Tu archivo Excel debe contar obligatoriamente con las siguientes columnas en la primera fila:</p>
+                            <span class="badge bg-secondary mt-2 me-1">N°</span>
+                            <span class="badge bg-primary mt-2 me-1">ID (Nombre del archivo)</span>
+                            <span class="badge bg-success mt-2">Link (URL del QR)</span>
+                        </div>
+                        
+                        <form method="POST" enctype="multipart/form-data" id="form-masivo">
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-secondary">Sube tu archivo .xlsx</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted"><i class="bi bi-filetype-xlsx"></i></span>
+                                    <input type="file" name="file_excel" class="form-control" accept=".xlsx" required>
+                                </div>
+                            </div>
+                            <button type="submit" name="btn_masivo_submit" class="btn btn-success w-100 py-3 shadow-sm btn-submit" onclick="if(this.form.checkValidity()) { setTimeout(() => { this.form.reset(); }, 300); }">
+                                <i class="bi bi-file-zip me-2"></i> Procesar y Descargar ZIP
+                            </button>
+                        </form>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
+</html>
